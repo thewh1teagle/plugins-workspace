@@ -7,7 +7,10 @@ mod cmd;
 mod tray;
 
 use serde::Serialize;
-use tauri::{webview::WebviewWindowBuilder, App, AppHandle, Manager, RunEvent, WebviewUrl};
+use tauri::{
+    webview::{PageLoadEvent, WebviewWindowBuilder},
+    App, AppHandle, Manager, RunEvent, WebviewUrl,
+};
 
 #[derive(Clone, Serialize)]
 struct Reply {
@@ -107,18 +110,20 @@ pub fn run() {
 
             Ok(())
         })
-        .on_page_load(|webview, _| {
-            let webview_ = webview.clone();
-            webview.listen("js-event", move |event| {
-                println!("got js-event with message '{:?}'", event.payload());
-                let reply = Reply {
-                    data: "something else".to_string(),
-                };
+        .on_page_load(|webview, payload| {
+            if payload.event() == PageLoadEvent::Finished {
+                let webview_ = webview.clone();
+                webview.listen("js-event", move |event| {
+                    println!("got js-event with message '{:?}'", event.payload());
+                    let reply = Reply {
+                        data: "something else".to_string(),
+                    };
 
-                webview_
-                    .emit("rust-event", Some(reply))
-                    .expect("failed to emit");
-            });
+                    webview_
+                        .emit("rust-event", Some(reply))
+                        .expect("failed to emit");
+                });
+            }
         });
 
     #[cfg(target_os = "macos")]
@@ -132,7 +137,7 @@ pub fn run() {
             cmd::log_operation,
             cmd::perform_request,
         ])
-        .build(tauri::tauri_build_context!())
+        .build(tauri::generate_context!())
         .expect("error while building tauri application");
 
     #[cfg(target_os = "macos")]

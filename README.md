@@ -24,14 +24,14 @@
 | [shell](plugins/shell)                          | Access the system shell. Allows you to spawn child processes and manage files and URLs using their default application.                                                                                               | ✅   | ✅   | ✅   | ?   | ?   |
 | [single-instance](plugins/single-instance)      | Ensure a single instance of your tauri app is running. | ✅  | ?   | ✅  | ?   | ?   |
 | [sql](plugins/sql)                              | Interface with SQL databases.                          | ✅  | ✅  | ✅  | ?   | ?   |
-| [store](plugins/store)                          | Persistent key value storage.                          | ✅  | ✅  | ✅  | ?   | ?   |
+| [store](plugins/store)                          | Persistent key value storage.                          | ✅  | ✅  | ✅  | ✅   | ✅   |
 | [stronghold](plugins/stronghold)                | Encrypted, secure database.                            | ✅  | ✅  | ✅  | ?   | ?   |
 | [updater](plugins/updater)                      | In-app updates for Tauri applications.                 | ✅  | ✅  | ✅  | ?   | ?   |
 | [upload](plugins/upload)                        | Tauri plugin for file uploads through HTTP.            | ✅  | ✅  | ✅  | ?   | ?   |
 | [websocket](plugins/websocket)                  | Open a WebSocket connection using a Rust client in JS. | ✅  | ✅  | ✅  | ?   | ?   |
 | [window-state](plugins/window-state)            | Persist window sizes and positions.                    | ✅  | ✅  | ✅  | ?   | ?   |
 
-_This repo and all plugins require a Rust version of at least **1.70**_
+_This repo and all plugins require a Rust version of at least **1.75**_
 
 ## Partners
 

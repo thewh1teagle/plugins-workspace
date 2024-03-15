@@ -4,7 +4,7 @@ Interface with SQL databases through [sqlx](https://github.com/launchbadge/sqlx)
 
 ## Install
 
-_This plugin requires a Rust version of at least **1.70**_
+_This plugin requires a Rust version of at least **1.75**_
 
 There are three general methods of installation that we can recommend.
 
@@ -89,7 +89,7 @@ const result = await db.execute(
 );
 
 const result = await db.execute(
-  "UPDATE todos SET title = $1, completed = $2 WHERE id = $3",
+  "UPDATE todos SET title = $1, status = $2 WHERE id = $3",
   [todos.title, todos.status, todos.id],
 );
 
@@ -100,7 +100,7 @@ const result = await db.execute(
 );
 
 const result = await db.execute(
-  "UPDATE todos SET title = ?, completed = ? WHERE id = ?",
+  "UPDATE todos SET title = ?, status = ? WHERE id = ?",
   [todos.title, todos.status, todos.id],
 );
 ```
