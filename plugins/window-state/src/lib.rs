@@ -95,15 +95,15 @@ impl Default for WindowState {
 }
 
 struct WindowStateCache(Arc<Mutex<HashMap<String, WindowState>>>);
-pub trait AppHandleExt {
+pub trait AppHandleExtInternal {
     /// Saves all open windows state to disk
-    fn save_window_state(&self, flags: StateFlags) -> Result<()>;
+    fn save_window_state(&self, flags: StateFlags, filename: &str) -> Result<()>;
 }
 
-impl<R: Runtime> AppHandleExt for tauri::AppHandle<R> {
-    fn save_window_state(&self, flags: StateFlags) -> Result<()> {
+impl<R: Runtime> AppHandleExtInternal for tauri::AppHandle<R> {
+    fn save_window_state(&self, flags: StateFlags, filename: &str) -> Result<()> {
         if let Ok(app_dir) = self.path().app_config_dir() {
-            let state_path = app_dir.join(STATE_FILENAME);
+            let state_path = app_dir.join(filename);
             let cache = self.state::<WindowStateCache>();
             let mut state = cache.0.lock().unwrap();
             for (label, s) in state.iter_mut() {
@@ -119,6 +119,26 @@ impl<R: Runtime> AppHandleExt for tauri::AppHandle<R> {
         } else {
             Ok(())
         }
+    }
+}
+
+pub trait AppHandleExt {
+    /// Saves all open windows state to disk
+    fn save_window_state(&self, flags: StateFlags) -> Result<()>;
+
+    /// Saves all open windows state to disk using the specified filename.
+    fn save_window_state_with_filename(&self, flags: StateFlags, filename: &str) -> Result<()>;
+}
+
+impl<R: Runtime> AppHandleExt for tauri::AppHandle<R> {
+    /// Saves all open windows state to disk using the [default filename](crate::STATE_FILENAME).
+    fn save_window_state(&self, flags: StateFlags) -> Result<()> {
+        AppHandleExtInternal::save_window_state(self, flags, STATE_FILENAME)
+    }
+
+    /// Saves all open windows state to disk using the specified filename.
+    fn save_window_state_with_filename(&self, flags: StateFlags, filename: &str) -> Result<()> {
+        AppHandleExtInternal::save_window_state(self, flags, filename)
     }
 }
 
@@ -286,6 +306,7 @@ pub struct Builder {
     denylist: HashSet<String>,
     skip_initial_state: HashSet<String>,
     state_flags: StateFlags,
+    filename: Option<String>,
 }
 
 impl Builder {
@@ -312,7 +333,15 @@ impl Builder {
         self
     }
 
+    /// Sets the state flags to control what state gets restored and saved.
+    pub fn with_filename(mut self, filename: &str) -> Self {
+        self.filename.replace(filename.to_string());
+        self
+    }
+
     pub fn build<R: Runtime>(self) -> TauriPlugin<R> {
+        let filename = self.filename.unwrap_or(STATE_FILENAME.into());
+        let filename_c = filename.clone();
         let flags = self.state_flags;
         PluginBuilder::new("window-state")
             .invoke_handler(tauri::generate_handler![
@@ -322,7 +351,7 @@ impl Builder {
             .setup(|app, _api| {
                 let cache: Arc<Mutex<HashMap<String, WindowState>>> =
                     if let Ok(app_dir) = app.path().app_config_dir() {
-                        let state_path = app_dir.join(STATE_FILENAME);
+                        let state_path = app_dir.join(filename);
                         if state_path.exists() {
                             Arc::new(Mutex::new(
                                 std::fs::read(state_path)
@@ -389,7 +418,7 @@ impl Builder {
             })
             .on_event(move |app, event| {
                 if let RunEvent::Exit = event {
-                    let _ = app.save_window_state(flags);
+                    let _ = app.save_window_state_with_filename(flags, &filename_c.clone());
                 }
             })
             .build()
