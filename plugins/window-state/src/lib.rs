@@ -352,7 +352,7 @@ impl Builder {
 
         let mut denylist_patterns = Vec::new();
         for pattern in denylist {
-            denylist_patterns.push(glob::Pattern::new(&pattern)?);
+            denylist_patterns.push(glob::Pattern::new(pattern)?);
         }
         self.denylist = denylist_patterns;
         Ok(self)
@@ -420,7 +420,6 @@ impl Builder {
                     .as_ref()
                     .map(|map| map(window.label()))
                     .unwrap_or_else(|| window.label());
-
 
                 for pattern in &self.denylist {
                     if pattern.matches(label) {
