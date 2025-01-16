@@ -29,4 +29,5 @@ serde_json = { workspace = true }
 tauri = { workspace = true }
 log = { workspace = true }
 thiserror = { workspace = true }
+glob = { workspace = true }
 bitflags = "2"

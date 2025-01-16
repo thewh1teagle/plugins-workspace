@@ -6919,6 +6919,7 @@ name = "tauri-plugin-window-state"
 version = "2.2.0"
 dependencies = [
  "bitflags 2.7.0",
+ "glob",
  "log",
  "serde",
  "serde_json",
