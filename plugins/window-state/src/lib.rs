@@ -41,8 +41,6 @@ pub enum Error {
     Tauri(#[from] tauri::Error),
     #[error(transparent)]
     SerdeJson(#[from] serde_json::Error),
-    #[error(transparent)]
-    Glob(#[from] glob::PatternError),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -347,15 +345,17 @@ impl Builder {
 
     /// Sets a list of windows that shouldn't be tracked and managed by this plugin
     /// For example, splash screen windows. It also supports glob patterns for flexible window matching.
-    pub fn with_denylist(mut self, denylist: &mut [&str]) -> Result<Self> {
+    pub fn with_denylist(mut self, denylist: &[&str]) -> Self {
+        let mut denylist = denylist.to_vec();
         denylist.sort();
 
         let mut denylist_patterns = Vec::new();
         for pattern in denylist {
-            denylist_patterns.push(glob::Pattern::new(pattern)?);
+            denylist_patterns
+                .push(glob::Pattern::new(pattern).expect("Failed to parse glob pattern"));
         }
         self.denylist = denylist_patterns;
-        Ok(self)
+        self
     }
 
     /// Adds the given window label to a list of windows to skip initial state restore.
