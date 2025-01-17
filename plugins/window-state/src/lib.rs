@@ -321,7 +321,7 @@ impl<R: Runtime> WindowExtInternal for Window<R> {
 #[derive(Default)]
 pub struct Builder {
     denylist: HashSet<String>,
-    filter_callback: Option<Arc<Mutex<FilterCallbackFn>>>,
+    filter_callback: Option<Box<FilterCallbackFn>>,
     skip_initial_state: HashSet<String>,
     state_flags: StateFlags,
     map_label: Option<Box<LabelMapperFn>>,
@@ -358,7 +358,7 @@ impl Builder {
     where
         F: Fn(&str) -> bool + Send + Sync + 'static,
     {
-        self.filter_callback = Some(Arc::new(Mutex::new(filter_callback)));
+        self.filter_callback = Some(Box::new(filter_callback));
         self
     }
 
@@ -432,7 +432,6 @@ impl Builder {
 
                 // Check deny list callback
                 if let Some(filter_callback) = &self.filter_callback {
-                    let filter_callback = filter_callback.lock().unwrap();
                     // Don't save the state if the callback returns false
                     if !filter_callback(label) {
                         return;
