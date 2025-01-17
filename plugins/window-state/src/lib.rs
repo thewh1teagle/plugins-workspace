@@ -41,6 +41,8 @@ pub enum Error {
     Tauri(#[from] tauri::Error),
     #[error(transparent)]
     SerdeJson(#[from] serde_json::Error),
+    #[error(transparent)]
+    Glob(#[from] glob::PatternError),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -319,7 +321,8 @@ impl<R: Runtime> WindowExtInternal for Window<R> {
 
 #[derive(Default)]
 pub struct Builder {
-    denylist: Vec<glob::Pattern>,
+    denylist: HashSet<String>,
+    denylist_patterns: Vec<glob::Pattern>,
     skip_initial_state: HashSet<String>,
     state_flags: StateFlags,
     map_label: Option<Box<LabelMapperFn>>,
@@ -344,18 +347,21 @@ impl Builder {
     }
 
     /// Sets a list of windows that shouldn't be tracked and managed by this plugin
-    /// For example, splash screen windows. It also supports glob patterns for flexible window matching.
+    /// For example, splash screen windows.
     pub fn with_denylist(mut self, denylist: &[&str]) -> Self {
-        let mut denylist = denylist.to_vec();
-        denylist.sort();
+        self.denylist = denylist.iter().map(|l| l.to_string()).collect();
+        self
+    }
 
+    /// Sets a list of windows that shouldn't be tracked and managed by this plugin using glob patterns
+    /// For example, you can denylist windows using wildcards.
+    pub fn with_denylist_glob(mut self, denylist: &[&str]) -> Result<Self> {
         let mut denylist_patterns = Vec::new();
         for pattern in denylist {
-            denylist_patterns
-                .push(glob::Pattern::new(pattern).expect("Failed to parse glob pattern"));
+            denylist_patterns.push(glob::Pattern::new(pattern)?);
         }
-        self.denylist = denylist_patterns;
-        self
+        self.denylist_patterns = denylist_patterns;
+        Ok(self)
     }
 
     /// Adds the given window label to a list of windows to skip initial state restore.
@@ -421,7 +427,13 @@ impl Builder {
                     .map(|map| map(window.label()))
                     .unwrap_or_else(|| window.label());
 
-                for pattern in &self.denylist {
+                // Check deny list names
+                if self.denylist.contains(label) {
+                    return;
+                }
+
+                // Check deny list patterns
+                for pattern in &self.denylist_patterns {
                     if pattern.matches(label) {
                         return;
                     }
