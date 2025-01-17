@@ -42,8 +42,6 @@ pub enum Error {
     Tauri(#[from] tauri::Error),
     #[error(transparent)]
     SerdeJson(#[from] serde_json::Error),
-    #[error(transparent)]
-    Glob(#[from] glob::PatternError),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
